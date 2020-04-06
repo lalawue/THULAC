@@ -167,7 +167,7 @@ thulac_fetch(void *ctx_void, int index) {
 }
 
 extern "C" void
-thulac_clean_result(void *ctx_void) {
+thulac_clean(void *ctx_void) {
     if (ctx_void) {
        thulac_ctx_t *ctx = static_cast<thulac_ctx_t *>(ctx_void);
        ctx->result.clear(); 

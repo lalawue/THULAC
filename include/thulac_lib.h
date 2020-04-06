@@ -21,7 +21,7 @@ int thulac_seg(void *ctx, const char *in);
 thulac_word_tag_t* thulac_fetch(void *ctx, int index);
 
 // clean last seg result
-void thulac_clean_result(void *ctx);
+void thulac_clean(void *ctx);
 
 #ifdef __cplusplus
 }
