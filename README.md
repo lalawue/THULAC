@@ -1,3 +1,6 @@
+
+**Modified by lalawue, generate shared library with thulac.cc, and better programming interface **
+
 # THULAC：一个高效的中文词法分析工具包
 ## 目录
 * [项目介绍](#项目介绍)
