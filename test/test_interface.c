@@ -12,18 +12,20 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    void *lac = thulac_init(NULL, NULL, 0, 0, 0);
-
-    if (lac)
+    void *ctx = thulac_init(NULL, NULL, 0, 0, 0);
+    if (ctx)
     {
-        struct thulac_tag *list = thulac_seg(lac, argv[1]);
-        struct thulac_tag *tag = list;
-        while (tag) {
-            printf("%s %s\n", tag->word, tag->tag);
-            tag = tag->next;
+        int count = thulac_seg(ctx, argv[1]);
+        for (int i = 0; i < count; i++)
+        {
+            thulac_word_tag_t *wt = thulac_fetch(ctx, i);
+            printf("%s %s\n", wt->word, wt->tag);
         }
-        thulac_clean(lac, list);
-        thulac_deinit(lac);
+        thulac_deinit(ctx);
+    }
+    else
+    {
+        printf("failed to init\n");
     }
 
     return 0;

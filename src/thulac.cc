@@ -33,7 +33,9 @@ void print(const THULAC_result& result, bool seg_only, char separator) {
     }
     cout << endl;
 }
+
 //#define THULAC_SHARED_LIB
+
 #ifndef THULAC_SHARED_LIB
 int main (int argc,char **argv) {
 
@@ -107,67 +109,69 @@ int main (int argc,char **argv) {
 
 #else
 
-//extern "C" {    
-void* 
-thulac_init(const char * model_path, const char* user_path, int just_seg, int t2s, int ufilter) {
-    THULAC *lac = new THULAC();
-    lac->init(model_path, user_path, just_seg, t2s, ufilter);
-    return static_cast<void *>(lac);
-}
-
-void 
-thulac_deinit(void *lac_c) {
-    if (lac_c) {
-        THULAC *lac = static_cast<THULAC *>(lac_c);
-        lac->deinit();
-        delete lac;
-    }
-}
-
-struct thulac_tag* 
-_thulac_next_tag(struct thulac_tag *tag) {
-    tag->next = (struct thulac_tag*)calloc(sizeof(struct thulac_tag), 1);
-    return tag->next;
-}
-
-// return tag list
-struct thulac_tag* 
-thulac_seg(void *lac_c, const char *in) {
-    if (lac_c == NULL || in == NULL) {
-        return NULL;
-    }
-    THULAC *lac = static_cast<THULAC *>(lac_c);
+typedef struct {
+    THULAC *lac;    
     THULAC_result result;
-    std::string raw(in);
-    lac->cut(raw, result);
-    struct thulac_tag head;
-    struct thulac_tag *tag = &head;
-    for (int i=0; i<result.size() - 1; i++) {
-        tag = _thulac_next_tag(tag);
-        tag->word = strndup(result[i].first.c_str(), result[i].first.length());
-        if (!lac->segOnly()) {
-            tag->tag = strndup(result[i].second.c_str(), result[i].second.length());
-        }
-    }
-    return head.next;
+    thulac_word_tag_t wt;    
+} thulac_ctx_t;
+
+extern "C" void* 
+thulac_init(const char * model_path, const char* user_path, int just_seg, int t2s, int ufilter) {
+    thulac_ctx_t *ctx = new thulac_ctx_t();
+    ctx->lac = new THULAC();
+    ctx->lac->init(model_path, user_path, just_seg, t2s, ufilter);
+    return static_cast<void *>(ctx);
 }
 
-void
-thulac_clean(void *lac_c, struct thulac_tag *list) {
-    if (list == NULL) {
-        return;
-    }
-    while (list) {
-        struct thulac_tag *next = list->next;
-        if (list->word) {
-            free(list->word);
-        }
-        if (list->tag) {
-            free(list->tag);
-        }
-        free(list);
-        list = next;
+extern "C" void
+thulac_deinit(void *ctx_void) {
+    if (ctx_void) {
+        thulac_ctx_t *ctx = static_cast<thulac_ctx_t *>(ctx_void);
+        ctx->lac->deinit();
+        delete ctx->lac;
+        delete ctx;
     }
 }
-//}
+
+// return valid seg count
+extern "C" int
+thulac_seg(void *ctx_void, const char *in) {
+    if (ctx_void == NULL || in == NULL) {
+        return 0;
+    }
+    thulac_ctx_t *ctx = static_cast<thulac_ctx_t *>(ctx_void);
+    ctx->result.clear();
+    std::string raw(in);
+    if (ctx->lac->cut(raw, ctx->result) <= 0) {
+        return 0;
+    }
+    ctx->result.pop_back();
+    return ctx->result.size();
+}
+
+extern "C" thulac_word_tag_t*
+thulac_fetch(void *ctx_void, int index) {
+    if (ctx_void) {
+        thulac_ctx_t *ctx = static_cast<thulac_ctx_t *>(ctx_void);
+        if (index < ctx->result.size()) {
+            ctx->wt.word = ctx->result[index].first.c_str();
+            if (ctx->lac->isSegOnly()) {
+                ctx->wt.tag = NULL;
+            } else {
+                ctx->wt.tag = ctx->result[index].second.c_str();
+            }
+            return &ctx->wt;
+        }
+    }
+    return NULL;
+}
+
+extern "C" void
+thulac_clean_result(void *ctx_void) {
+    if (ctx_void) {
+       thulac_ctx_t *ctx = static_cast<thulac_ctx_t *>(ctx_void);
+       ctx->result.clear(); 
+    }
+}
+
 #endif

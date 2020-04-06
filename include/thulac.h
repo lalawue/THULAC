@@ -55,7 +55,7 @@ public:
     THULAC_result multiTreadCut(const std::string &in, int thread) const;
     std::string toString(const THULAC_result& result) const;
     //    THULAC operator=(THULAC lac);
-    bool segOnly() { return seg_only; }
+    bool isSegOnly() { return seg_only; }
     
     THULAC() {
         user_specified_dict_name=NULL;
@@ -218,7 +218,9 @@ void THULAC::deinit() {
 //}
 
 int THULAC::cut(const std::string &in, THULAC_result& result) const {
-    
+    if (in.length() <= 0) {
+        return 0;
+    }
     POCGraph poc_cands;
     int startraw = 0;
     thulac::RawSentence raw;
@@ -336,14 +338,6 @@ THULAC_result cut(const std::string &in, const THULAC &lac) {
     return lac.cut(in);
 }
 
-void _cut(const std::string &in, const THULAC &lac, THULAC_result &out) {
-    lac.cut(in, out);
-}
-
-int foo(int a, int b) {
-    //    a = b;
-    return a+b;
-}
 THULAC_result& multiTreadCut(const std::string &in, THULAC& lac, int thread) {
     std::vector<std::future<THULAC_result>> t;
     THULAC_result output;
