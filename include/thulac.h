@@ -14,7 +14,6 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
-#include <thread>
 #include <future>
 using namespace thulac;
 
@@ -52,7 +51,6 @@ public:
     void deinit();
     int cut(const std::string& in, THULAC_result& result) const;
     THULAC_result cut(const std::string& in) const;
-    THULAC_result multiTreadCut(const std::string &in, int thread) const;
     std::string toString(const THULAC_result& result) const;
     //    THULAC operator=(THULAC lac);
     bool isSegOnly() { return seg_only; }
@@ -337,25 +335,5 @@ std::string THULAC::toString(const THULAC_result& result) const {
 THULAC_result cut(const std::string &in, const THULAC &lac) {
     return lac.cut(in);
 }
-
-THULAC_result& multiTreadCut(const std::string &in, THULAC& lac, int thread) {
-    std::vector<std::future<THULAC_result>> t;
-    THULAC_result output;
-    std::vector<std::string> splited = eqSeg(in, thread);
-    int s_len = splited.size();
-    for(int i=0; i<thread; i++) {
-        t.push_back(std::async(&cut, splited[i], lac));
-    }
-    
-    std::vector<THULAC_result> each_thread_result;
-    for(int i=0; i<thread; i++) {
-        THULAC_result current_thread_result = t[i].get();
-        output.insert(output.begin(), current_thread_result.begin(), current_thread_result.end());
-    }
-//    lac.deinit();
-    return output;
-    
-}
-
 
 #endif
