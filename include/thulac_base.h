@@ -25,17 +25,6 @@ enum POC{
     kPOC_S='3'
 };
 
-struct thulac_tag_base {
-    char *word; // word in sentence
-    char *tag; // word tag, NULL for seg_only 
-    struct thulac_tag_base *next; // NULL for 
-};
-
-thulac_tag_base* _thulac_next_tag(struct thulac_tag_base *tag) {
-    tag->next = (struct thulac_tag_base *)calloc(1, sizeof(struct thulac_tag_base));
-    return tag->next;
-}
-
 typedef std::vector<POC> POCSequence;
 typedef std::vector<int> POCGraph;
 
@@ -50,15 +39,6 @@ struct WordWithTag{
         os<<wwt.word<<wwt.separator<<wwt.tag;
         return os;
     }
-    static thulac_tag_base* tags_out(WordWithTag& wwt) {
-        thulac_tag_base *tag = new thulac_tag_base;
-        std::ostringstream w;
-        w << wwt.word;
-        tag->word = strndup(w.str().c_str(), w.str().length() + 1);
-        tag->tag = strndup(wwt.tag.c_str(), wwt.tag.length() + 1);
-        tag->next = NULL;
-        return tag;
-    }
 };
 
 //typedef std::vector<WordWithTag> TaggedSentence;
@@ -69,15 +49,6 @@ class TaggedSentence : public std::vector<WordWithTag>{
             os<<sentence[i];
         }
         return os;    
-    };
-public:
-    static thulac_tag_base* tags_out(TaggedSentence& sentence) {
-        thulac_tag_base head;
-        thulac_tag_base *tag = &head;
-        for(size_t i=0;i<sentence.size();i++){
-            tag->next = WordWithTag::tags_out(sentence[i]);
-        }
-        return head.next;    
     };
 };
 

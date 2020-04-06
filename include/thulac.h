@@ -55,6 +55,7 @@ public:
     THULAC_result multiTreadCut(const std::string &in, int thread) const;
     std::string toString(const THULAC_result& result) const;
     //    THULAC operator=(THULAC lac);
+    bool segOnly() { return seg_only; }
     
     THULAC() {
         user_specified_dict_name=NULL;
@@ -184,7 +185,7 @@ int THULAC::init(const char * model_path, const char* user_path, int just_seg, i
     if(useFilter){
         filter = new Filter((prefix+"xu.dat").c_str(), (prefix+"time.dat").c_str());
     }
-    printf("Model loaded succeed\n");
+    //printf("Model loaded succeed\n");
     return int(true);
 }
 

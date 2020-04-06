@@ -1,6 +1,8 @@
 #include "thulac.h"
+#include "thulac_lib.h"
 #include <iostream>
 #include <fstream>
+
 using std::cin;
 using std::cout;
 using std::endl;
@@ -31,8 +33,8 @@ void print(const THULAC_result& result, bool seg_only, char separator) {
     }
     cout << endl;
 }
-
-
+//#define THULAC_SHARED_LIB
+#ifndef THULAC_SHARED_LIB
 int main (int argc,char **argv) {
 
     char* user_specified_dict_name=NULL;
@@ -102,3 +104,70 @@ int main (int argc,char **argv) {
     foutput.close();
     return 0;
 }
+
+#else
+
+//extern "C" {    
+void* 
+thulac_init(const char * model_path, const char* user_path, int just_seg, int t2s, int ufilter) {
+    THULAC *lac = new THULAC();
+    lac->init(model_path, user_path, just_seg, t2s, ufilter);
+    return static_cast<void *>(lac);
+}
+
+void 
+thulac_deinit(void *lac_c) {
+    if (lac_c) {
+        THULAC *lac = static_cast<THULAC *>(lac_c);
+        lac->deinit();
+        delete lac;
+    }
+}
+
+struct thulac_tag* 
+_thulac_next_tag(struct thulac_tag *tag) {
+    tag->next = (struct thulac_tag*)calloc(sizeof(struct thulac_tag), 1);
+    return tag->next;
+}
+
+// return tag list
+struct thulac_tag* 
+thulac_seg(void *lac_c, const char *in) {
+    if (lac_c == NULL || in == NULL) {
+        return NULL;
+    }
+    THULAC *lac = static_cast<THULAC *>(lac_c);
+    THULAC_result result;
+    std::string raw(in);
+    lac->cut(raw, result);
+    struct thulac_tag head;
+    struct thulac_tag *tag = &head;
+    for (int i=0; i<result.size() - 1; i++) {
+        tag = _thulac_next_tag(tag);
+        tag->word = strndup(result[i].first.c_str(), result[i].first.length());
+        if (!lac->segOnly()) {
+            tag->tag = strndup(result[i].second.c_str(), result[i].second.length());
+        }
+    }
+    return head.next;
+}
+
+void
+thulac_clean(void *lac_c, struct thulac_tag *list) {
+    if (list == NULL) {
+        return;
+    }
+    while (list) {
+        struct thulac_tag *next = list->next;
+        if (list->word) {
+            free(list->word);
+        }
+        if (list->tag) {
+            free(list->tag);
+        }
+        free(list);
+        list = next;
+    }
+}
+//}
+#endif
